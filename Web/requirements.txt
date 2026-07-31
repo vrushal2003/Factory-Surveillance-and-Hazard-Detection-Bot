@@ -1,0 +1,24 @@
+# Core server
+flask==3.0.3
+flask-socketio==5.3.6
+eventlet==0.36.1
+
+# Camera / vision (OpenCV used for JPEG encoding + mock frames + video writing)
+opencv-python-headless==4.10.0.84
+numpy==1.26.4
+
+# Sensors
+RPi.GPIO==0.7.1
+adafruit-circuitpython-dht==4.0.7
+adafruit-circuitpython-ads1x15==2.4.1
+adafruit-blinka==8.50.0
+pyserial==3.5
+
+# NOTE: picamera2 is NOT installed via pip on Raspberry Pi OS.
+# It comes preinstalled system-wide, or install it with:
+#   sudo apt update && sudo apt install -y python3-picamera2 --no-install-recommends
+# If using a venv, create it with --system-site-packages so it can see picamera2:
+#   python3 -m venv venv --system-site-packages
+#
+# NOTE: adafruit-circuitpython-dht needs libgpiod2 on newer Pi OS:
+#   sudo apt install -y libgpiod2

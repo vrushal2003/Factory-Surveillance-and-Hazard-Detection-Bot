@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Factory Bot — Control Center</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg:      #0b0d11;
+  --surface: #13161e;
+  --card:    #181c27;
+  --border:  #252a38;
+  --accent:  #00e5a0;
+  --warn:    #f59e0b;
+  --danger:  #ef4444;
+  --text:    #dde3f0;
+  --muted:   #5a6380;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+body { background: var(--bg); color: var(--text); font-family: 'Courier New', monospace; font-size: 14px; }
+
+/* HEADER */
+header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 24px; height: 52px;
+  background: var(--surface); border-bottom: 1px solid var(--border);
+  position: sticky; top: 0; z-index: 100;
+}
+.logo { color: var(--accent); font-size: 16px; font-weight: 700; letter-spacing: 3px; }
+.logo em { color: var(--muted); font-style: normal; font-weight: 400; }
+.hdr-right { display: flex; align-items: center; gap: 24px; }
+#conn-badge { display:flex; align-items:center; gap:6px; font-size:12px; letter-spacing:1px; }
+#dot { width:8px; height:8px; border-radius:50%; background:var(--accent); animation: blink 2s infinite; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+#clock { color: var(--muted); font-size: 12px; }
+
+/* ALERT BANNER */
+#alert-banner {
+  display:none; background:var(--danger);
+  color:#fff; text-align:center; padding:10px;
+  font-weight:700; font-size:13px; letter-spacing:2px;
+  animation: flashbg 1s infinite;
+}
+@keyframes flashbg { 0%,100%{background:var(--danger)} 50%{background:#c42020} }
+
+/* MAIN LAYOUT */
+.layout {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  grid-template-rows: auto auto auto;
+  gap: 16px;
+  padding: 16px;
+  max-width: 1600px;
+  margin: 0 auto;
+}
+
+/* CARD */
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 18px;
+}
+.card-label {
+  font-size: 10px; letter-spacing: 3px; text-transform: uppercase;
+  color: var(--accent); margin-bottom: 14px;
+  padding-bottom: 10px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 8px;
+}
+.card-label::before { content:''; width:6px; height:6px; border-radius:50%; background:var(--accent); display:inline-block; }
+
+/* CAMERA */
+.cam-card { grid-column:1; grid-row:1; }
+#cam-img {
+  width:100%; border-radius:6px; display:block;
+  background:#000; aspect-ratio:4/3; object-fit:cover;
+  border:1px solid var(--border);
+}
+.cam-footer { display:flex; justify-content:space-between; margin-top:8px; color:var(--muted); font-size:11px; }
+
+/* SENSORS */
+.sensors-card { grid-column:2; grid-row:1; }
+.sensor-list { display:flex; flex-direction:column; gap:10px; }
+.sensor-row {
+  background: var(--surface); border:1px solid var(--border);
+  border-radius:8px; padding:12px 14px;
+  display:flex; align-items:center; justify-content:space-between;
+  transition: border-color 0.3s;
+}
+.sensor-row.warn  { border-color: var(--warn); }
+.sensor-row.danger{ border-color: var(--danger); }
+.sensor-lbl { font-size:11px; color:var(--muted); letter-spacing:1px; text-transform:uppercase; }
+.sensor-val { font-size:28px; font-weight:700; color:var(--accent); line-height:1; transition:color 0.3s; }
+.sensor-row.warn   .sensor-val { color:var(--warn); }
+.sensor-row.danger .sensor-val { color:var(--danger); }
+.sensor-unit { font-size:12px; color:var(--muted); margin-left:3px; }
+.sensor-bar-wrap { height:3px; background:var(--border); border-radius:2px; margin-top:6px; }
+.sensor-bar { height:100%; border-radius:2px; width:0%; transition:width .5s, background .3s; background:var(--accent); }
+.sensor-row.warn   .sensor-bar { background:var(--warn); }
+.sensor-row.danger .sensor-bar { background:var(--danger); }
+
+/* CONTROLS */
+.ctrl-card { grid-column:2; grid-row:2; }
+.dpad {
+  display:grid;
+  grid-template-areas:". F ." "L S R" ". B .";
+  grid-template-columns:1fr 1fr 1fr;
+  gap:8px; margin-bottom:16px;
+}
+.cbtn {
+  background:var(--surface); border:1px solid var(--border);
+  color:var(--text); border-radius:8px; padding:16px;
+  cursor:pointer; font-size:20px; font-family:inherit;
+  transition:all .15s; user-select:none; touch-action:manipulation;
+}
+.cbtn:hover  { border-color:var(--accent); background:rgba(0,229,160,.08); }
+.cbtn:active, .cbtn.pressed { background:var(--accent); color:#000; border-color:var(--accent); }
+.cbtn-F { grid-area:F; }
+.cbtn-L { grid-area:L; }
+.cbtn-S { grid-area:S; border-color:var(--danger); color:var(--danger); font-size:16px; }
+.cbtn-S:hover { background:var(--danger); color:#fff; border-color:var(--danger); }
+.cbtn-R { grid-area:R; }
+.cbtn-B { grid-area:B; }
+.speed-row { display:flex; align-items:center; gap:12px; }
+.speed-row label { color:var(--muted); font-size:11px; letter-spacing:1px; white-space:nowrap; }
+input[type=range] { flex:1; accent-color:var(--accent); cursor:pointer; }
+#spd-val { color:var(--accent); font-size:15px; font-weight:700; min-width:40px; text-align:right; }
+.key-hint { color:var(--muted); font-size:10px; margin-top:10px; text-align:center; }
+
+/* CHART */
+.chart-card { grid-column:1; grid-row:2; }
+.chart-tabs { display:flex; gap:6px; margin-bottom:14px; flex-wrap:wrap; }
+.tab {
+  padding:5px 14px; border-radius:20px; cursor:pointer;
+  border:1px solid var(--border); background:var(--surface);
+  color:var(--muted); font-family:inherit; font-size:11px;
+  letter-spacing:1px; transition:all .15s;
+}
+.tab.active { border-color:var(--accent); color:var(--accent); background:rgba(0,229,160,.08); }
+.chart-box { height:240px; }
+
+/* VIDEOS */
+.video-card { grid-column:2; grid-row:3; }
+.video-list { display:flex; flex-direction:column; gap:6px; max-height:220px; overflow-y:auto; }
+.video-item {
+  display:flex; justify-content:space-between; align-items:center;
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:6px; padding:8px 12px;
+}
+.video-name { font-size:12px; }
+.video-meta { color:var(--muted); font-size:10px; margin-top:2px; }
+.dl-btn {
+  background:none; border:1px solid var(--accent); color:var(--accent);
+  border-radius:5px; padding:4px 12px; cursor:pointer; font-size:11px;
+  font-family:inherit; white-space:nowrap;
+}
+.dl-btn:hover { background:var(--accent); color:#000; }
+.refresh-btn {
+  margin-top:10px; padding:7px 16px; background:var(--surface);
+  border:1px solid var(--border); color:var(--muted);
+  border-radius:6px; cursor:pointer; font-family:inherit; font-size:12px;
+}
+.refresh-btn:hover { border-color:var(--accent); color:var(--accent); }
+
+/* ALERTS */
+.alert-card { grid-column:1; grid-row:3; }
+#alert-log { max-height:130px; overflow-y:auto; }
+.alert-entry {
+  border-left:3px solid var(--danger);
+  background:rgba(239,68,68,.06); border-radius:0 6px 6px 0;
+  padding:6px 10px; margin-bottom:5px; font-size:12px;
+}
+.atime { color:var(--muted); margin-right:8px; }
+.no-alerts { color:var(--muted); font-size:12px; padding:6px 0; }
+
+/* THRESHOLDS */
+.thresh-card { grid-column:1/-1; }
+.thresh-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; }
+@media(max-width:700px){ .thresh-grid{ grid-template-columns:1fr 1fr; } }
+.thresh-field label { font-size:10px; letter-spacing:1px; color:var(--muted); display:block; margin-bottom:5px; text-transform:uppercase; }
+.thresh-field input {
+  width:100%; background:var(--surface); border:1px solid var(--border);
+  color:var(--text); border-radius:6px; padding:8px 10px;
+  font-family:inherit; font-size:15px;
+}
+.thresh-field input:focus { outline:none; border-color:var(--accent); }
+.save-btn {
+  margin-top:14px; padding:9px 22px; background:var(--accent);
+  color:#000; border:none; border-radius:6px; cursor:pointer;
+  font-family:inherit; font-weight:700; font-size:13px; letter-spacing:1px;
+}
+.save-btn:hover { opacity:.85; }
+
+/* MOBILE */
+@media(max-width:900px){
+  .layout { grid-template-columns:1fr; }
+  .cam-card,.sensors-card,.ctrl-card,.chart-card,.video-card,.alert-card { grid-column:1; }
+}
+
+::-webkit-scrollbar { width:4px; }
+::-webkit-scrollbar-track { background:var(--surface); }
+::-webkit-scrollbar-thumb { background:var(--border); border-radius:2px; }
+</style>
+</head>
+<body>
+
+<div id="alert-banner">⚠ ALERT — SENSOR THRESHOLD EXCEEDED</div>
+
+<header>
+  <div class="logo">FACTORY<em>BOT</em> &nbsp;·&nbsp; CONTROL CENTER</div>
+  <div class="hdr-right">
+    <div id="conn-badge"><div id="dot"></div><span id="conn-txt">CONNECTED</span></div>
+    <div id="clock">--:--:--</div>
+  </div>
+</header>
+
+<div class="layout">
+
+  <!-- CAMERA -->
+  <div class="card cam-card">
+    <div class="card-label">LIVE FEED</div>
+    <img id="cam-img" src="/video_feed" alt="Live camera feed">
+    <div class="cam-footer">
+      <span>MJPEG stream · 640×480</span>
+      <span id="cam-upd">—</span>
+    </div>
+  </div>
+
+  <!-- SENSORS -->
+  <div class="card sensors-card">
+    <div class="card-label">SENSOR READINGS</div>
+    <div class="sensor-list">
+
+      <div class="sensor-row" id="sr-temp">
+        <div>
+          <div class="sensor-lbl">Temperature</div>
+          <div><span class="sensor-val" id="sv-temp">—</span><span class="sensor-unit">°C</span></div>
+          <div class="sensor-bar-wrap"><div class="sensor-bar" id="sb-temp"></div></div>
+        </div>
+        <div style="font-size:32px; color:var(--muted)">🌡</div>
+      </div>
+
+      <div class="sensor-row" id="sr-hum">
+        <div>
+          <div class="sensor-lbl">Humidity</div>
+          <div><span class="sensor-val" id="sv-hum">—</span><span class="sensor-unit">%</span></div>
+          <div class="sensor-bar-wrap"><div class="sensor-bar" id="sb-hum"></div></div>
+        </div>
+        <div style="font-size:32px; color:var(--muted)">💧</div>
+      </div>
+
+      <div class="sensor-row" id="sr-gas">
+        <div>
+          <div class="sensor-lbl">Gas (PPM)</div>
+          <div><span class="sensor-val" id="sv-gas">—</span><span class="sensor-unit">ppm</span></div>
+          <div class="sensor-bar-wrap"><div class="sensor-bar" id="sb-gas"></div></div>
+        </div>
+        <div style="font-size:32px; color:var(--muted)">🔥</div>
+      </div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+        <div class="sensor-row" id="sr-dist">
+          <div style="width:100%">
+            <div class="sensor-lbl">Ultrasonic</div>
+            <div><span class="sensor-val" id="sv-dist" style="font-size:22px">—</span><span class="sensor-unit">cm</span></div>
+            <div class="sensor-bar-wrap"><div class="sensor-bar" id="sb-dist"></div></div>
+          </div>
+        </div>
+        <div class="sensor-row" id="sr-lidar">
+          <div style="width:100%">
+            <div class="sensor-lbl">LiDAR</div>
+            <div><span class="sensor-val" id="sv-lidar" style="font-size:22px">—</span><span class="sensor-unit">cm</span></div>
+            <div class="sensor-bar-wrap"><div class="sensor-bar" id="sb-lidar"></div></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- CHART -->
+  <div class="card chart-card">
+    <div class="card-label">SENSOR HISTORY</div>
+    <div class="chart-tabs">
+      <button class="tab active" onclick="switchChart('temperature',this)">Temp</button>
+      <button class="tab" onclick="switchChart('humidity',this)">Humidity</button>
+      <button class="tab" onclick="switchChart('gas_ppm',this)">Gas</button>
+      <button class="tab" onclick="switchChart('distance_cm',this)">Ultrasonic</button>
+      <button class="tab" onclick="switchChart('lidar_cm',this)">LiDAR</button>
+    </div>
+    <div class="chart-box"><canvas id="chart"></canvas></div>
+  </div>
+
+  <!-- CONTROLS -->
+  <div class="card ctrl-card">
+    <div class="card-label">BOT CONTROLS</div>
+    <div class="dpad">
+      <button class="cbtn cbtn-F" id="btn-F" onpointerdown="send('forward')"   onpointerup="send('stop')">▲</button>
+      <button class="cbtn cbtn-L" id="btn-L" onpointerdown="send('left')"      onpointerup="send('stop')">◄</button>
+      <button class="cbtn cbtn-S" id="btn-S" onpointerdown="send('stop')">■ STOP</button>
+      <button class="cbtn cbtn-R" id="btn-R" onpointerdown="send('right')"     onpointerup="send('stop')">►</button>
+      <button class="cbtn cbtn-B" id="btn-B" onpointerdown="send('backward')"  onpointerup="send('stop')">▼</button>
+    </div>
+    <div class="speed-row">
+      <label>SPEED</label>
+      <input type="range" id="spd" min="10" max="100" value="50"
+        oninput="document.getElementById('spd-val').textContent=this.value+'%'">
+      <span id="spd-val">50%</span>
+    </div>
+    <div class="key-hint">Hold W A S D to drive · Space = stop</div>
+  </div>
+
+  <!-- ALERTS -->
+  <div class="card alert-card">
+    <div class="card-label">ALERT LOG</div>
+    <div id="alert-log"><div class="no-alerts">All readings normal — no alerts.</div></div>
+  </div>
+
+  <!-- VIDEOS -->
+  <div class="card video-card">
+    <div class="card-label">RECORDED VIDEOS</div>
+    <div class="video-list" id="video-list">
+      <div class="no-alerts">Loading…</div>
+    </div>
+    <button class="refresh-btn" onclick="loadVideos()">↻ Refresh list</button>
+  </div>
+
+  <!-- THRESHOLDS -->
+  <div class="card thresh-card">
+    <div class="card-label">ALERT THRESHOLDS</div>
+    <div class="thresh-grid">
+      <div class="thresh-field">
+        <label>Max Temperature (°C)</label>
+        <input type="number" id="t-temp" value="60" step="0.5">
+      </div>
+      <div class="thresh-field">
+        <label>Max Humidity (%)</label>
+        <input type="number" id="t-hum" value="85">
+      </div>
+      <div class="thresh-field">
+        <label>Max Gas (PPM)</label>
+        <input type="number" id="t-gas" value="300" step="10">
+      </div>
+      <div class="thresh-field">
+        <label>Min Distance (cm)</label>
+        <input type="number" id="t-dist" value="15">
+      </div>
+    </div>
+    <button class="save-btn" onclick="saveThresholds()">Save thresholds</button>
+  </div>
+
+</div><!-- /layout -->
+
+<script>
+// ── Socket ──────────────────────────────────────────
+const socket = io();
+socket.on('connect',    () => setConn(true));
+socket.on('disconnect', () => setConn(false));
+function setConn(ok) {
+  document.getElementById('dot').style.background = ok ? 'var(--accent)' : 'var(--danger)';
+  document.getElementById('conn-txt').textContent  = ok ? 'CONNECTED' : 'DISCONNECTED';
+}
+
+// Clock
+setInterval(() => {
+  document.getElementById('clock').textContent = new Date().toLocaleTimeString();
+}, 1000);
+
+// ── Thresholds (local copy for colour logic) ──
+const T = { temperature_max:60, humidity_max:85, gas_ppm_max:300, distance_min:15 };
+
+// ── Sensor data ──────────────────────────────────────
+const hist = { temperature:[], humidity:[], gas_ppm:[], distance_cm:[], lidar_cm:[], labels:[] };
+const MAX = 60;
+
+socket.on('sensor_data', d => {
+  document.getElementById('cam-upd').textContent = 'Updated ' + d.timestamp;
+
+  gauge('temp',  d.temperature, 0, 100,  T.temperature_max, null);
+  gauge('hum',   d.humidity,    0, 100,  T.humidity_max,    null);
+  gauge('gas',   d.gas_ppm,     0, 1000, T.gas_ppm_max,     null);
+  gauge('dist',  d.distance_cm, 0, 400,  null,              T.distance_min);
+  gauge('lidar', d.lidar_cm,    0, 400,  null,              T.distance_min);
+
+  ['temperature','humidity','gas_ppm','distance_cm','lidar_cm'].forEach(k => {
+    hist[k].push(d[k]);
+    if (hist[k].length > MAX) hist[k].shift();
+  });
+  hist.labels.push(d.timestamp);
+  if (hist.labels.length > MAX) hist.labels.shift();
+  refreshChart();
+});
+
+function gauge(id, val, min, max, warnHi, warnLo) {
+  document.getElementById('sv-'+id).textContent = val;
+  const pct = Math.min(100, Math.max(0, (val-min)/(max-min)*100));
+  document.getElementById('sb-'+id).style.width = pct + '%';
+  const row = document.getElementById('sr-'+id);
+  const overHi = warnHi !== null && val > warnHi;
+  const underLo = warnLo !== null && val < warnLo;
+  row.className = 'sensor-row' + (overHi||underLo ? (val > warnHi*1.15 || val < warnLo*0.7 ? ' danger' : ' warn') : '');
+}
+
+// ── Alerts ───────────────────────────────────────────
+socket.on('alert', data => {
+  const banner = document.getElementById('alert-banner');
+  banner.style.display = 'block';
+  setTimeout(() => banner.style.display = 'none', 8000);
+
+  const log = document.getElementById('alert-log');
+  const empty = log.querySelector('.no-alerts');
+  if (empty) empty.remove();
+
+  data.triggered.forEach(item => {
+    const div = document.createElement('div');
+    div.className = 'alert-entry';
+    div.innerHTML = `<span class="atime">${data.timestamp}</span>${item.sensor.replace(/_/g,' ').toUpperCase()}: <b>${item.value}</b> (limit ${item.limit})`;
+    log.prepend(div);
+  });
+  while (log.children.length > 30) log.removeChild(log.lastChild);
+});
+
+// ── Chart ─────────────────────────────────────────────
+let activeKey = 'temperature';
+const chartLabels = { temperature:'Temperature (°C)', humidity:'Humidity (%)', gas_ppm:'Gas PPM', distance_cm:'Ultrasonic (cm)', lidar_cm:'LiDAR (cm)' };
+
+const ctx = document.getElementById('chart').getContext('2d');
+const myChart = new Chart(ctx, {
+  type: 'line',
+  data: { labels:[], datasets:[{
+    label:'', data:[], fill:true,
+    borderColor:'#00e5a0', backgroundColor:'rgba(0,229,160,0.07)',
+    borderWidth:2, pointRadius:0, tension:0.4
+  }]},
+  options: {
+    responsive:true, maintainAspectRatio:false, animation:false,
+    plugins:{ legend:{display:false} },
+    scales:{
+      x:{ ticks:{color:'#5a6380',font:{size:10},maxTicksLimit:8}, grid:{color:'#252a38'} },
+      y:{ ticks:{color:'#5a6380',font:{size:11}}, grid:{color:'#252a38'} }
+    }
+  }
+});
+
+function switchChart(key, btn) {
+  activeKey = key;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  refreshChart();
+}
+function refreshChart() {
+  myChart.data.labels = [...hist.labels];
+  myChart.data.datasets[0].data  = [...hist[activeKey]];
+  myChart.data.datasets[0].label = chartLabels[activeKey];
+  myChart.update('none');
+}
+
+// ── Controls ──────────────────────────────────────────
+function getSpd() { return parseInt(document.getElementById('spd').value); }
+function send(cmd) { socket.emit('control', { command:cmd, speed:getSpd() }); }
+
+const keyMap = { w:'forward', a:'left', s:'backward', d:'right', ' ':'stop',
+  ArrowUp:'forward', ArrowLeft:'left', ArrowDown:'backward', ArrowRight:'right' };
+const held = new Set();
+document.addEventListener('keydown', e => {
+  const cmd = keyMap[e.key];
+  if (!cmd) return;
+  e.preventDefault();
+  if (!held.has(e.key)) { held.add(e.key); send(cmd); }
+});
+document.addEventListener('keyup', e => {
+  if (!keyMap[e.key]) return;
+  held.delete(e.key);
+  if (held.size === 0) send('stop');
+});
+
+// ── Videos ────────────────────────────────────────────
+function loadVideos() {
+  fetch('/api/videos').then(r => r.json()).then(files => {
+    const list = document.getElementById('video-list');
+    if (!files.length) { list.innerHTML = '<div class="no-alerts">No recordings yet.</div>'; return; }
+    list.innerHTML = files.slice(0,20).map(f => `
+      <div class="video-item">
+        <div>
+          <div class="video-name">${f.name}</div>
+          <div class="video-meta">${f.size_mb} MB &nbsp;·&nbsp; ${f.modified}</div>
+        </div>
+        <a href="/videos/${f.name}" download>
+          <button class="dl-btn">↓ Download</button>
+        </a>
+      </div>`).join('');
+  });
+}
+loadVideos();
+
+// ── Thresholds ────────────────────────────────────────
+function saveThresholds() {
+  const payload = {
+    temperature_max: parseFloat(document.getElementById('t-temp').value),
+    humidity_max:    parseFloat(document.getElementById('t-hum').value),
+    gas_ppm_max:     parseFloat(document.getElementById('t-gas').value),
+    distance_min:    parseFloat(document.getElementById('t-dist').value),
+  };
+  Object.assign(T, payload);
+  fetch('/api/alerts/thresholds', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body:JSON.stringify(payload)
+  }).then(r=>r.json()).then(()=>{
+    const b = document.querySelector('.save-btn');
+    b.textContent = '✓ Saved!';
+    setTimeout(()=> b.textContent = 'Save thresholds', 2000);
+  });
+}
+fetch('/api/alerts/thresholds').then(r=>r.json()).then(t=>{
+  document.getElementById('t-temp').value = t.temperature_max;
+  document.getElementById('t-hum').value  = t.humidity_max;
+  document.getElementById('t-gas').value  = t.gas_ppm_max;
+  document.getElementById('t-dist').value = t.distance_min;
+});
+</script>
+</body>
+</html>

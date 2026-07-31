@@ -1,66 +1,65 @@
-# Factory Surveillance and Hazard Detection Bot
+<p align="center">
+  <img src="media/images/hero-image.png" alt="Factory Surveillance and Hazard Detection Bot" width="900">
+</p>
 
-An IoT-based industrial surveillance and hazard detection system that combines Raspberry Pi, ESP32, computer vision, and environmental sensors to provide real-time monitoring through a modern web dashboard.
+<h1 align="center">Factory Surveillance and Hazard Detection Bot</h1>
 
+<p align="center">
+An IoT-based Industrial Surveillance and Hazard Detection System powered by Raspberry Pi 5, ESP32, Computer Vision, and Environmental Sensors.
+</p>
 
-## Overview
+<p align="center">
+Industrial IoT • Raspberry Pi 5 • ESP32 • Flask • OpenCV • Computer Vision
+</p>
 
-The **Factory Surveillance and Hazard Detection Bot** is designed to enhance industrial safety by providing continuous environmental monitoring, live video surveillance, and centralized system control.
+---
 
-The system integrates a **Raspberry Pi 5**, **ESP32**, and multiple environmental sensors to collect real-time data, process alerts, and present all critical information through an intuitive web dashboard. Operators can remotely monitor the factory environment, view live camera feeds, analyze sensor data, configure alert thresholds, and access recorded surveillance footage from a single interface.
+# Overview
 
-## Key Features
+The **Factory Surveillance and Hazard Detection Bot** is an Industrial IoT project developed to improve workplace safety through continuous environmental monitoring and intelligent surveillance.
+
+The system combines a **Raspberry Pi 5**, **ESP32**, and multiple environmental sensors with a modern web dashboard to provide operators with live monitoring, hazard detection, and centralized robot control.
+
+---
+
+# Objective
+
+Develop a smart industrial surveillance system capable of:
+
+- Monitoring environmental conditions in real time
+- Detecting hazardous situations
+- Streaming live video
+- Providing remote monitoring through a web dashboard
+- Improving workplace safety using IoT technologies
+
+---
+
+# Key Features
 
 - Secure User Authentication
 - Live Camera Streaming
 - Real-Time Sensor Monitoring
-- Temperature & Humidity Monitoring
+- Temperature Monitoring
+- Humidity Monitoring
 - MQ2 Gas Detection
 - Ultrasonic Distance Measurement
 - LiDAR Distance Monitoring
 - Sensor History Visualization
 - Alert Logging System
 - Configurable Safety Thresholds
-- Robot Control Interface
+- Robot Control Dashboard
 - Recorded Video Management
-- Responsive Dark-Themed Dashboard
+- Responsive Dark-Themed Interface
 
+---
 
-# Screenshots
+# Technologies Used
 
-## Login Page
-
-Secure authentication interface before accessing the Factory Surveillance Control Center.
-
-![Login Page](media/images/login-page.png)
-
-
-## Web Interface (Normal Lighting)
-
-Live monitoring dashboard displaying the camera feed, environmental sensor readings, robot controls, and recorded video management under normal lighting conditions.
-
-![Web Interface](media/images/dashboard-normal-light-web-interface.png)
-
-
-## Dashboard – Low-Light Testing
-
-Demonstrates the Raspberry Pi camera performance and surveillance dashboard in low-light industrial environments.
-
-![Low Light Dashboard](media/images/dashboard-low-light-web-interface.png)
-
-
-## Sensor Monitoring & Alert Dashboard
-
-Displays real-time sensor history, alert logs, environmental monitoring, and configurable safety thresholds for hazard detection.
-
-![Sensor Dashboard](media/images/dashboard-sensor-monitoring.png)
-
-
-# Hardware Components
+### Hardware
 
 - Raspberry Pi 5
+- ESP32
 - Raspberry Pi Camera Module
-- ESP32 Development Board
 - MQ2 Gas Sensor
 - DHT11 Temperature & Humidity Sensor
 - Ultrasonic Sensors
@@ -69,51 +68,101 @@ Displays real-time sensor history, alert logs, environmental monitoring, and con
 - OLED Display
 - Active Buzzer
 
-
-# Software Stack
-
-### Programming Languages
+### Software
 
 - Python
+- Flask
 - HTML5
 - CSS3
 - JavaScript
-
-### Frameworks & Libraries
-
-- Flask
 - OpenCV
 - Chart.js
 
-### Hardware Platforms
-
-- Raspberry Pi OS
-- ESP32
-
+---
 
 # System Architecture
 
 ```text
-                    Environmental Sensors
-        ┌─────────────────────────────────────┐
-        │  MQ2  │ DHT11 │ Ultrasonic │ LiDAR │
-        └─────────────────────────────────────┘
-                         │
-                         ▼
-                    ESP32 Controller
-                         │
-                         ▼
-                  Raspberry Pi 5
-          ┌──────────────────────────┐
-          │ Camera Module            │
-          │ Flask Web Server         │
-          │ Sensor Processing        │
-          │ Alert Management         │
-          └──────────────────────────┘
-                         │
-                         ▼
-               Web Dashboard Interface
+                Environmental Sensors
+      ┌────────────────────────────────────┐
+      │ MQ2 │ DHT11 │ Ultrasonic │ LiDAR │
+      └────────────────────────────────────┘
+                     │
+                     ▼
+                  ESP32 Board
+                     │
+                     ▼
+               Raspberry Pi 5
+      ┌───────────────────────────────┐
+      │ Camera Module                 │
+      │ Flask Web Server              │
+      │ Sensor Processing             │
+      │ Alert Management              │
+      └───────────────────────────────┘
+                     │
+                     ▼
+            Web Dashboard Interface
+```
 
+---
+
+# How It Works
+
+1. Environmental sensors continuously collect live data.
+2. ESP32 processes sensor readings.
+3. Sensor data is transmitted to the Raspberry Pi.
+4. Raspberry Pi processes the incoming information.
+5. Flask updates the web dashboard in real time.
+6. Operators monitor camera feeds and environmental conditions.
+7. Alerts are generated whenever safety thresholds are exceeded.
+
+---
+
+# Screenshots
+
+## Login Page
+
+Secure authentication before accessing the control center.
+
+![Login Page](media/images/login-page.png)
+
+---
+
+## Web Interface (Normal Lighting)
+
+Live monitoring dashboard displaying:
+
+- Camera Feed
+- Environmental Sensor Readings
+- Robot Controls
+- Recorded Video Management
+
+![Dashboard](media/images/dashboard-normal-light-web-interface.png)
+
+---
+
+## Sensor Monitoring & Alert Dashboard
+
+Real-time monitoring of:
+
+- Temperature
+- Humidity
+- Gas Levels
+- Sensor History
+- Alert Logs
+- Safety Threshold Configuration
+
+![Sensor Dashboard](media/images/dashboard-sensor-monitoring.png)
+
+---
+
+## Dashboard – Low-Light Testing
+
+Demonstrates surveillance capability in low-light industrial environments.
+
+![Low Light Dashboard](media/images/dashboard-low-light-web-interface.png)
+
+---
 
 # Repository Structure
 
@@ -123,15 +172,19 @@ Factory-Surveillance-and-Hazard-Detection-Bot/
 ├── media/
 │   └── images/
 │
-├── static/
-│
-├── templates/
+├── web/
+│   ├── app.py
+│   ├── requirements.txt
+│   ├── static/
+│   ├── templates/
+│   └── ...
 │
 ├── README.md
 │
-└── ...
+└── LICENSE (Optional)
+```
 
-
+---
 
 # Future Enhancements
 
@@ -139,32 +192,35 @@ Factory-Surveillance-and-Hazard-Detection-Bot/
 - Human Detection
 - Motion Detection
 - AI-Based Object Detection
+- Cloud Video Storage
 - Email Notifications
 - SMS Alerts
-- Cloud Video Storage
 - Mobile Application
 - Multi-User Authentication
 - Remote Robot Navigation
 - AI-Based Hazard Prediction
 
+---
 
 # Project Team
 
-This project was collaboratively developed by:
+| Team Member | Primary Role | Responsibilities |
+| :--- | :--- | :--- |
+| **Gaurav Pale** | Software Development | Raspberry Pi Development<br>Web Dashboard Development<br>Backend Integration |
+| **Smiraj Patil** | Project Management | Project Coordination<br>Documentation<br>Research Paper & Publication |
+| **Sherin Mathai** | Hardware Engineering | Research Support<br>Hardware Procurement<br>Hardware Integration |
+| **Vrushal Patil** | Mechanical & System Design | 3D Design & Printing<br>Web Interface Development<br>System Integration |
 
-| Team Member | Responsibilities |
-|-------------|------------------|
-| **Gaurav Pale** | Raspberry Pi Development, Web Dashboard Development, Backend Integration |
-| **Smiraj Patil** | Project Coordination, Documentation, Research Paper & Publication |
-| **Sherin Mathai** | Research Support, Hardware Procurement, Hardware Integration |
-| **Vrushal Patil** | 3D Design & Printing, Web Interface Development, System Integration |
+---
 
+# Project Status
 
-# License
+**Status:** Active Development
 
-This project was developed for educational and research purposes.
+The project is being continuously improved with additional AI-powered surveillance capabilities, enhanced robot control features, and expanded IoT sensor integration.
 
+---
 
-## Acknowledgements
+# Acknowledgements
 
-This project was developed as a collaborative Industrial IoT and Computer Vision project focused on improving industrial safety through real-time surveillance and environmental monitoring.
+This project was collaboratively developed as an Industrial IoT and Computer Vision solution for improving industrial safety through intelligent surveillance, real-time environmental monitoring, and hazard detection.
